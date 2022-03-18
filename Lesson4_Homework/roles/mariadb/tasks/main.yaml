@@ -1,0 +1,57 @@
+---
+    - name: Install 'mariadb-server' and 'MySQL-python' packages
+      yum:
+        name: ['mariadb-server', 'MySQL-python']
+        state: present
+        update_cache: true
+
+    - name: open tcp-3306 on firewalld
+      firewalld:
+        zone: public
+        port: 3306/tcp
+        permanent: true
+        state: enabled
+
+    - name: Ensure 'mariadb' service is started and enabled
+      service:
+        name: mariadb
+        enabled: true
+        state: started
+
+    - name: Wait for MariaDB
+      wait_for:
+        port: 3306
+
+    - name: Create "{{ db_name }}"  database
+      community.mysql.mysql_db:
+        name: "{{ db_name }}"
+        state: present
+
+
+    - name: Create database user "{{ db_user }}" with "{{ db_pass }}" and "{{ db_name }}".*:ALL privelege
+      no_log: true
+      mysql_user:
+        login_user: 'root'
+        login_password: ''
+        name: '{{ db_user }}'
+        password: '{{ db_password }}'
+        priv: '{{ db_name  }}.*:ALL'
+        host: '%'
+        state: present
+
+    - name: Remove all anonymous user accounts
+      community.mysql.mysql_user:
+        name: ''
+        host_all: true
+        state: absent
+
+    - name: Change mysql root password
+      no_log: true
+      mysql_user:
+        login_user: 'root'
+        login_password: ''
+        name: 'root'
+        password: '{{ db_password }}'
+        priv: '*.*:ALL'
+        host: '%'
+        state: present

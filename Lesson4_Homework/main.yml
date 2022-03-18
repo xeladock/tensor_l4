@@ -1,0 +1,23 @@
+---
+- name: install LAMP-WP stack
+  hosts: tensor
+  become: true
+
+  roles:
+   - role: nginx
+     tags: [nginx]
+   - role: php_fpm
+     tags: [php_fpm]
+   - role: mariadb
+     tags: [mariadb]
+   - role: wordpress
+     tags: [wordpress]
+
+  post_tasks:
+   - name: check web site from control server
+     uri:
+      url: "http://{{ server_ip }}:{{ nginx_no_tls_port }}"
+      return_content: true
+     connection: local
+     register: example_webpage_out
+     failed_when: example_webpage_out.status != 200

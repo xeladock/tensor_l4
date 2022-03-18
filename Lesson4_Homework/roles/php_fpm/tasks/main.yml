@@ -1,0 +1,35 @@
+---
+   - name: Copy remi-php74.repo
+     copy:
+       src: files/remi-php74.repo
+       dest: /etc/yum.repos.d/remi-php74.repo
+       owner: nginx
+       group: nginx
+       mode: 0755
+
+   - name: Copy remi-safe.repo
+     copy:
+       src: files/remi-safe.repo
+       dest: /etc/yum.repos.d/remi-safe.repo
+       owner: nginx
+       group: nginx
+       mode: 0755
+
+   - name: "Install packages"
+     yum:
+       name: "{{ item }}"
+       state: present
+     loop: "{{ php_packages_list }}"
+
+   - name: Delete www.conf
+     file:
+       path: /etc/php-fpm.d/www.conf
+       state: absent
+
+   - name: Copy wordpress.conf from files to /etc/php-fpm.d/wordpress.conf
+     copy:
+       src: files/wordpress.conf
+       dest: /etc/php-fpm.d/wordpress.conf
+       owner: nginx
+       group: nginx
+       mode: 0755

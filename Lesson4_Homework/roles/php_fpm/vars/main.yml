@@ -1,0 +1,17 @@
+---
+php_packages_list:
+  - php-common
+  - php-xml
+  - php-xmlrpc
+  - php-curl
+  - php-dom
+  - php-exif
+  - php-fileinfo
+  - php-fpm
+  - php-imagick
+  - php-gd
+  - php-hash
+  - php-json
+  - php-mbstring
+  - php-mysql
+  - php

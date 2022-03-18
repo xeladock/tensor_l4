@@ -1,0 +1,11 @@
+---
+- name: mac filter
+  hosts: local
+  connection: local
+  gather_facts: false
+  vars:
+    data: 123123123aff
+  tasks:
+    - name: debug
+      debug:
+        msg: "{{ data | mac_function }}"

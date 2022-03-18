@@ -1,0 +1,146 @@
+---
+    - name: copy nginx.repo
+      copy:
+        src: files/nginx.repo
+        dest: /etc/yum.repos.d/nginx.repo
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: copy epel-repo
+      copy:
+        src: files/epel.repo
+        dest: /etc/yum.repos.d/epel.repo
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: update packages
+      yum:
+        name: '*'
+
+    - name: install nginx
+      yum:
+        name: nginx
+        update_cache: true
+        state: present
+
+    - name: copy main nginx config file
+      copy:
+        src: files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart nginx
+
+    - name: copy default nginx config file
+      copy:
+        src: files/default.conf
+        dest: /etc/nginx/conf.d/default.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart nginx
+
+    - name: copy site's nginx config file
+      template:
+        src: templates/nginx-wordpress.conf.j2
+        dest: /etc/nginx/conf.d/wordpress.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart nginx
+
+    - name: copy index.html
+      template:
+        src: templates/index.html.j2
+        dest: /usr/share/nginx/html/index.html
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart nginx
+
+    - name: insert firewalld rule for nginx
+      firewalld:
+        port: 80/tcp
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Install the pyOpenSSL
+      pip:
+        name: PyOpenSSL
+        state: present
+        executable: pip3
+
+    - name: Install openssl
+      yum:
+        name: openssl
+        state: present
+
+    - name: Create a folder for csr
+      file:
+        path: /etc/ssl/csr
+        state: directory
+        mode: 0755
+        owner: ansible
+        group: ansible
+
+    - name: Create a folder for key
+      file:
+        path: /etc/ssl/private
+        state: directory
+        mode: 0755
+        owner: ansible
+        group: ansible
+
+    - name: Create a folder for certs
+      file:
+        path: /etc/ssl/certs
+        state: directory
+        mode: 0755
+        owner: ansible
+        group: ansible
+
+    - name: open tcp-443 on firewalld
+      firewalld:
+        zone: public
+        port: 443/tcp
+        permanent: true
+        state: enabled
+
+    - name: Generate an OpenSSL private key
+      openssl_privatekey:
+        path: /etc/ssl/private/localhost.pem
+
+    - name: Generate CSR
+      openssl_csr:
+        path: /etc/ssl/csr/req.csr
+        privatekey_path: /etc/ssl/private/localhost.pem
+        country_name: RU
+        organization_name: Ansible
+        email_address: ansible@localhost
+        common_name: localhost
+
+    - name: Generate a self-signed certificate
+      openssl_certificate:
+        path: /etc/ssl/certs/nginx-selfsigned.crt
+        privatekey_path: /etc/ssl/private/localhost.pem
+        csr_path: /etc/ssl/csr/req.csr
+        provider: selfsigned
+
+    - name: ensure nginx is enabled and started
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Wait for Nginx
+      wait_for:
+        port: 443

@@ -1,0 +1,56 @@
+---
+    - name: Add linux group "wordpress"
+      group:
+        name: wordpress
+        state: present
+
+    - name: Create a wp user
+      no_log: true
+      user:
+        name: wordpress
+        uid: 1111
+        password: wordpress
+        groups: wordpress
+        home: /usr/share/nginx/wordpress
+        state: present
+
+    - name: Create a folder for wp
+      file:
+        path: /usr/share/nginx/wordpress
+        state: directory
+        mode: 0755
+        owner: wordpress
+        group: wordpress
+
+    - name: Download and extract Wordpress
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /usr/share/nginx
+        remote_src: true
+
+    - name: Copy Wordpress config file from templates to WP directory
+      template:
+        src: templates/wp-config.php.j2
+        dest: /usr/share/nginx/wordpress/wp-config.php
+        owner: wordpress
+        group: wordpress
+        mode: 0644
+
+    - name: Recursively change owner's directory of WP
+      file:
+        path: /usr/share/nginx/wordpress
+        state: directory
+        recurse: true
+        owner: wordpress
+        group: wordpress
+
+    - name: Start php-fpm
+      ansible.builtin.service:
+        name: php-fpm
+        state: started
+        enabled: true
+
+    - name: Restart nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted

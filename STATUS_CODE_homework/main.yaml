@@ -1,0 +1,24 @@
+- name: test module
+  hosts: tensor
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: get HTTP sc via bash
+      example_sh:
+        link: https://ansible.com
+#        link: https://ansible.com111
+      register: bash_result
+
+    - name: print result
+      debug:
+        msg: "{{ bash_result }}"
+
+    - name: get HTTP sc via python
+      example_py:
+#        link: https://ansible.com111
+        link: https://ansible.com
+      register: py_result
+
+    - name: print result
+      debug:
+        msg: "{{ py_result }}"
